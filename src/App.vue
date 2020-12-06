@@ -1,17 +1,23 @@
 <template>
   <div>
     <form @submit.prevent="submit">
-      <input type="text" v-model="message" />
+      <input type="text" v-model="name" />
+      <input type="number" v-model="age" />
+      <input type="text" v-model="country" />
       <button>Send</button>
     </form>
   </div>
-  <ul>
-    <li v-for="info in info" :key="info.id">{{info.message}} {{info.id}}</li>
+  <ul v-if="load == true">
+    <li v-for="info in info" :key="info.id">
+      {{ info.name }} is {{ info.age }} from {{ info.country }}
+    </li>
   </ul>
+  <h1 v-else>Loading</h1>
 </template>
 
 <script>
 import firebase from "firebase";
+
 var firebaseConfig = {
   apiKey: "AIzaSyAnQtIa6aAMG_PNvt4duwa71qBunYRfccY",
   authDomain: "learning-firebase-basics-72c99.firebaseapp.com",
@@ -24,51 +30,51 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 const db = firebase.firestore();
-var docRef = db.collection("message");
+var docRef = db.collection("message").orderBy("age", "desc");
 export default {
   data() {
     return {
-      message: null,
-      info: []
+      name: null,
+      age: null,
+      country: null,
+      info: [],
+      load: true,
     };
   },
   methods: {
     submit() {
-      if (this.message) {
+      if (this.name && this.age && this.country) {
+        this.load = false;
         db.collection("message")
-          .add({
-            first: "jason",
-            last: "clarke",
-            message: this.message,
-            born: 2002,
-          })
-          .then(function(docRef) {
-            console.log("Document written with ID: ", docRef.id);
         
+          .add({
+            name: this.name,
+            age: this.age,
+            country: this.country,
+          })
+          .then((docRef) => {
+            console.log("Document written with ID: ", docRef.id);
+            this.load = true;
+            this.info = [];
+            this.readData();
           })
           .catch(function(error) {
             console.error("Error adding document: ", error);
           });
-
-
       }
-      this.info = [];
-          this.readData();
     },
-    readData(){
-        docRef.get().then((querySnapshot) => {
-          querySnapshot.forEach((doc) => {
-            // doc.data() is never undefined for query doc snapshots
-           
-         this.info.push(doc.data());
-          });
+    readData() {
+      docRef.get().then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          // doc.data() is never undefined for query doc snapshots
+          this.info.push(doc.data());
         });
-    }
+      });
+    },
   },
-  created(){
-      this.readData()
-  }
-
+  created() {
+    this.readData();
+  },
 };
 </script>
 
