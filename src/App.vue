@@ -1,18 +1,19 @@
 <template>
   <div>
-    <form @submit.prevent="submit">
-      <input type="text" v-model="name" />
-      <input type="number" v-model="age" />
-      <input type="text" v-model="country" />
-      <button>Send</button>
-    </form>
+    <div>
+      <form @submit.prevent="submit">
+        <input type="text" v-model="name" />
+        <input type="number" v-model="age" />
+        <input type="text" v-model="country" />
+        <button>Send</button>
+      </form>
+    </div>
+    <ul>
+      <li v-for="info in info" :key="info.time">
+        {{ info.name }} is {{ info.age }} from {{ info.country }}
+      </li>
+    </ul>
   </div>
-  <ul v-if="load == true">
-    <li v-for="info in info" :key="info.id">
-      {{ info.name }} is {{ info.age }} from {{ info.country }}
-    </li>
-  </ul>
-  <h1 v-else>Loading</h1>
 </template>
 
 <script>
@@ -30,32 +31,35 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 const db = firebase.firestore();
-var docRef = db.collection("message").orderBy("age", "desc");
+var docRef = db.collection("message").orderBy("time", "desc");
 export default {
   data() {
     return {
       name: null,
       age: null,
       country: null,
+      time: null,
       info: [],
-      load: true,
+ 
     };
   },
   methods: {
     submit() {
       if (this.name && this.age && this.country) {
-        this.load = false;
-        db.collection("message")
         
+        db.collection("message")
+
+
           .add({
             name: this.name,
             age: this.age,
             country: this.country,
+            time: firebase.firestore.FieldValue.serverTimestamp(),
           })
           .then((docRef) => {
             console.log("Document written with ID: ", docRef.id);
             this.load = true;
-            this.info = [];
+
             this.readData();
           })
           .catch(function(error) {
@@ -65,15 +69,24 @@ export default {
     },
     readData() {
       docRef.get().then((querySnapshot) => {
+        let sm = [];
         querySnapshot.forEach((doc) => {
           // doc.data() is never undefined for query doc snapshots
-          this.info.push(doc.data());
+          sm.push(doc.data());
         });
+        this.info = sm;
       });
     },
   },
-  created() {
-    this.readData();
+  mounted() {
+     docRef.get().then((querySnapshot) => {
+        let sm = [];
+        querySnapshot.forEach((doc) => {
+          // doc.data() is never undefined for query doc snapshots
+          sm.push(doc.data());
+        });
+        this.info = sm;
+      });
   },
 };
 </script>
